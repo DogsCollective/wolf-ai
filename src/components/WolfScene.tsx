@@ -122,7 +122,7 @@ useEffect(() => {
 
     // Floating idle motion
    // Floating + breathing motion
-ref.current.position.y = Math.sin(t * 1.2) * 0.05;
+ref.current.position.y = -0.35 + Math.sin(t * 1.2) * 0.05;
 ref.current.scale.setScalar(1 + Math.sin(t * 1.5) * 0.01);
 
     // Mouse follow (subtle head tilt)
@@ -170,7 +170,7 @@ if (blinkPhase.current >= 0) {
   });
 
   return (
-    <group ref={ref}>
+    <group ref={ref} position={[0, -0.35, 0]}>
       <primitive
         object={clonedScene}
         scale={1.5}
@@ -191,7 +191,7 @@ const WolfScene = () => {
       }}
     >
       <Canvas
-        camera={{ position: [0, 0.2, 4], fov: 35 }}
+        camera={{ position: [0, 0.3, 4], fov: 35 }}
         shadows
         dpr={[1, 1.2]}
         gl={{ alpha: true }}

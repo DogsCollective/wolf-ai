@@ -183,6 +183,7 @@ if (blinkPhase.current >= 0) {
 useGLTF.preload("/models/wolf.glb");
 
 const WolfScene = () => {
+  const isMobile = window.innerWidth < 768;
   return (
     <div
       className="w-full h-[100dvh] overflow-hidden"
@@ -191,11 +192,11 @@ const WolfScene = () => {
       }}
     >
       <Canvas
-        camera={{ position: [0, 0.3, 4], fov: 35 }}
-        shadows
-        dpr={[1, 1.2]}
-        gl={{ alpha: true }}
-        style={{ background: "transparent" }}
+      camera={{ position: [0, 0.3, isMobile ? 5 : 4], fov: 35 }}
+      shadows
+      dpr={[1, 1.2]}
+      gl={{ alpha: true }}
+      style={{ background: "transparent" }}
       >
         <ambientLight intensity={0.5} />
 

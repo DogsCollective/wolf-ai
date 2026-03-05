@@ -29,7 +29,6 @@ function WolfModel() {
       if (child instanceof THREE.Mesh && child.material) {
         const mat = child.material as THREE.MeshStandardMaterial;
 
-        // Detect cyan/blue eye materials
         if (mat.color && mat.color.b > 0.6 && mat.color.r < 0.4) {
           const newMat = mat.clone();
           newMat.emissive = new THREE.Color(0x00ccff);
@@ -55,122 +54,118 @@ function WolfModel() {
     (e: MouseEvent) => {
       const rect = gl.domElement.getBoundingClientRect();
 
-      mouse.current.x = ((e.clientX - rect.left) / rect.width) * 5 - 2.5;
-      mouse.current.y = -((e.clientY - rect.top) / rect.height) * 5 + 1.5;
+      mouse.current.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.current.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
     },
     [gl]
   );
 
   useEffect(() => {
 
-  const handleTouchMove = (e: TouchEvent) => {
-    const touch = e.touches[0];
-    const rect = gl.domElement.getBoundingClientRect();
+    const handleTouchMove = (e: TouchEvent) => {
+      const touch = e.touches[0];
+      const rect = gl.domElement.getBoundingClientRect();
 
-    mouse.current.x = ((touch.clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.current.y = -((touch.clientY - rect.top) / rect.height) * 2 + 1;
-  };
+      mouse.current.x = ((touch.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.current.y = -((touch.clientY - rect.top) / rect.height) * 2 + 1;
+    };
 
-  const handleMouseDown = () => {
-    hoverGlow.current = 1.5;
-  };
+    const handleMouseDown = () => {
+      hoverGlow.current = 1.5;
+    };
 
-  window.addEventListener("mousemove", handleMouseMove);
-  window.addEventListener("touchmove", handleTouchMove, { passive: true });
-  window.addEventListener("mousedown", handleMouseDown);
-  window.addEventListener("touchstart", handleMouseDown);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+    window.addEventListener("mousedown", handleMouseDown);
+    window.addEventListener("touchstart", handleMouseDown);
 
     return () => {
-  window.removeEventListener("mousemove", handleMouseMove);
-  window.removeEventListener("touchmove", handleTouchMove);
-  window.removeEventListener("mousedown", handleMouseDown);
-  window.removeEventListener("touchstart", handleMouseDown);
-  };
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("mousedown", handleMouseDown);
+      window.removeEventListener("touchstart", handleMouseDown);
+    };
 
-}, [handleMouseMove, gl]);
+  }, [handleMouseMove, gl]);
 
-useEffect(() => {
+  useEffect(() => {
 
-  const handleOrientation = (event: DeviceOrientationEvent) => {
-  if (event.beta !== null && event.gamma !== null) {
+    const handleOrientation = (event: DeviceOrientationEvent) => {
+      if (event.beta !== null && event.gamma !== null) {
 
-    gyro.current.x = THREE.MathUtils.clamp(event.beta / 90, -0.5, 0.5);
-    gyro.current.y = THREE.MathUtils.clamp(event.gamma / 90, -0.5, 0.5);
+        gyro.current.x = THREE.MathUtils.clamp(event.beta / 90, -0.5, 0.5);
+        gyro.current.y = THREE.MathUtils.clamp(event.gamma / 90, -0.5, 0.5);
 
-  }
-};
+      }
+    };
 
-  window.addEventListener("deviceorientation", handleOrientation);
+    window.addEventListener("deviceorientation", handleOrientation);
 
-  return () => {
-    window.removeEventListener("deviceorientation", handleOrientation);
-  };
+    return () => {
+      window.removeEventListener("deviceorientation", handleOrientation);
+    };
 
-}, []);
-
+  }, []);
 
   useFrame((_, delta) => {
     if (!ref.current) return;
 
     timeRef.current += delta;
-
     const t = timeRef.current;
 
-    // Pendulum rotation (left-right)
-    const targetRotY = Math.sin(t * 0.4) * 0.25;
-    ref.current.rotation.y += (targetRotY - ref.current.rotation.y) * 0.02;
+    // floating motion
+    ref.current.position.y = -0.40 + Math.sin(t * 1.2) * 0.05;
 
-    // Floating idle motion
-   // Floating + breathing motion
-ref.current.position.y = -0.35 + Math.sin(t * 1.2) * 0.05;
-ref.current.scale.setScalar(1 + Math.sin(t * 1.5) * 0.01);
+    // pointer + gyro target rotation
+    const targetRotX =
+      THREE.MathUtils.clamp(-mouse.current.y * 0.5, -0.5, 0.5) +
+      gyro.current.x * 0.4;
 
-    // Mouse follow (subtle head tilt)
-    const targetRotX = mouse.current.y * 0.25 + gyro.current.x * 0.5;
-    const targetRotYMouse = -mouse.current.x * 0.25 + gyro.current.y * 0.5;
+    const targetRotY =
+      THREE.MathUtils.clamp(mouse.current.x * 0.6, -0.6, 0.6) +
+      gyro.current.y * 0.4;
 
-    ref.current.rotation.x += (targetRotX - ref.current.rotation.x) * 0.05;
-    ref.current.rotation.y += (targetRotYMouse - ref.current.rotation.y) * 0.05;
+    // smooth follow
+    ref.current.rotation.x += (targetRotX - ref.current.rotation.x) * 0.08;
+    ref.current.rotation.y += (targetRotY - ref.current.rotation.y) * 0.08;
 
     // Eye glow pulse
-    const glowIntensity = THREE.MathUtils.clamp(
-  hoverGlow.current + Math.sin(t * 2) * 0.15,
-  0,
-  1.5 
-);
+    const glowIntensity = hoverGlow.current + Math.sin(t * 2) * 0.15;
+    hoverGlow.current *= 0.96;
 
     eyeMaterials.current.forEach((mat) => {
       mat.emissiveIntensity = glowIntensity;
     });
 
-// Blink animation (eye glow blink)
-nextBlink.current -= delta;
+    // Blink animation
+    nextBlink.current -= delta;
 
-if (nextBlink.current <= 0 && blinkPhase.current < 0) {
-  blinkPhase.current = 0;
-  nextBlink.current = Math.random() * 3 + 5;
-}
+    if (nextBlink.current <= 0 && blinkPhase.current < 0) {
+      blinkPhase.current = 0;
+      nextBlink.current = Math.random() * 3 + 5;
+    }
 
-if (blinkPhase.current >= 0) {
-  blinkPhase.current += delta * 10;
+    if (blinkPhase.current >= 0) {
+      blinkPhase.current += delta * 10;
 
-  const blink =
-    blinkPhase.current < 1
-      ? 1 - blinkPhase.current
-      : blinkPhase.current - 1;
+      const blink =
+        blinkPhase.current < 1
+          ? 1 - blinkPhase.current
+          : blinkPhase.current - 1;
 
-  eyeMaterials.current.forEach((mat) => {
-    mat.emissiveIntensity = blink * 0.4;
-  });
+      eyeMaterials.current.forEach((mat) => {
+        mat.emissiveIntensity = blink * 0.4;
+      });
 
-  if (blinkPhase.current >= 2) {
-    blinkPhase.current = -1;
-  }
-}
+      if (blinkPhase.current >= 2) {
+        blinkPhase.current = -1;
+      }
+    }
+
   });
 
   return (
-    <group ref={ref} position={[0, -0.35, 0]}>
+    <group ref={ref}>
       <primitive
         object={clonedScene}
         scale={1.5}
@@ -183,7 +178,9 @@ if (blinkPhase.current >= 0) {
 useGLTF.preload("/models/wolf.glb");
 
 const WolfScene = () => {
+
   const isMobile = window.innerWidth < 768;
+
   return (
     <div
       className="w-full h-[100dvh] overflow-hidden"
@@ -192,12 +189,13 @@ const WolfScene = () => {
       }}
     >
       <Canvas
-      camera={{ position: [0, 0.3, isMobile ? 5 : 4], fov: 35 }}
-      shadows
-      dpr={[1, 1.2]}
-      gl={{ alpha: true }}
-      style={{ background: "transparent" }}
+        camera={{ position: [0, 0.3, isMobile ? 5.8 : 4.2], fov: 35 }}
+        shadows
+        dpr={[1, 1.2]}
+        gl={{ alpha: true }}
+        style={{ background: "transparent" }}
       >
+
         <ambientLight intensity={0.5} />
 
         <directionalLight
@@ -226,6 +224,7 @@ const WolfScene = () => {
           blur={2.5}
           far={4}
         />
+
       </Canvas>
     </div>
   );

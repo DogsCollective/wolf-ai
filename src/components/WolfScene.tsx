@@ -118,15 +118,15 @@ function WolfModel() {
 
     // pointer + gyro target rotation
     const targetRotX =
-      THREE.MathUtils.clamp(-mouse.current.y * 0.5, -0.5, 0.5) +
-      gyro.current.x * 0.4;
+      THREE.MathUtils.clamp(-mouse.current.y * 0.8, -0.7, 0.7) +
+      gyro.current.x * 0.5;
 
     const targetRotY =
       THREE.MathUtils.clamp(mouse.current.x * 0.6, -0.6, 0.6) +
       gyro.current.y * 0.4;
 
     // smooth follow
-    ref.current.rotation.x += (targetRotX - ref.current.rotation.x) * 0.08;
+    ref.current.rotation.x += (targetRotX - ref.current.rotation.x) * 0.12;
     ref.current.rotation.y += (targetRotY - ref.current.rotation.y) * 0.08;
 
     // Eye glow pulse
